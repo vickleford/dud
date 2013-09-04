@@ -1,0 +1,138 @@
+<html>
+<head>
+    <title>Dashboards-Up Display (dud)</title>
+    <style>
+    body {
+        padding: 0px;
+        margin: 0px;
+        background-color: #c5c5c5;
+        color: #000000;
+        font-family: Arial;
+        font-size: 12px;
+    }
+    form {
+        display: block;
+        position: absolute;
+        background-color: lightgray;
+        margin: 0px;
+        padding: 2px 5px 2px 5px;
+        z-index: 1;
+        outline-style: none;
+        
+    }
+    div#root {
+        width: 100%;
+        height: 100%;
+        z-index: -1;
+    }
+    div#root > iframe{
+        display: block;
+        width: 100%;
+        height: 100%;
+        border: none;
+    }
+    </style>
+    
+    <script>
+    var timerId;
+    
+    function getUrls() {
+        cookies = document.cookie.split(";");
+        for (i=0; i < cookies.length; i++) {
+            var start = 0;
+            if (cookies[i].substring(0,1) == " ") { start++; }
+            if (cookies[i].substring(start, start + 4) == "urls") {
+                var urls = cookies[i].split("=")[1].split(",");
+                return urls;
+            }
+        }
+        console.log("urls not set in cookie");
+        return null;
+    }
+    
+    function collectionToArray(collection) {
+    	var ary = new Array();
+    	for (var i = 0; i < collection.length; i++) {
+    		ary.push(collection[i].value);
+    	}
+    	return ary;
+    }
+    
+    function saveUrls() {
+        var the_urls = collectionToArray(document.getElementById("urls").options);
+        var expires = new Date();
+        expires.setDate(expires.getDate() + 365);
+        document.cookie = "urls" + "=" + the_urls.join() + "; expires=" + expires + "; path=/";
+    }
+    
+    function addUrl() {
+        var url = window.prompt("What URL", "http://www.example.edu/");
+        var sel = document.getElementById("urls");
+        var opt = document.createElement("option");
+        if ((url != "") && (url != null)) {
+            opt.text = url;
+            sel.add(opt, null);
+            saveUrls();
+         }
+    }
+    
+    function delUrl() {
+        var sel = document.getElementById("urls");
+        sel.remove(sel.selectedIndex);
+        saveUrls();
+    }
+    
+    function loadUrls() {
+        var urls = getUrls();
+        var sel = document.getElementById("urls");
+        for (var i = 0; i < urls.length; i++) {
+            var opt = document.createElement("option");
+            opt.text = urls[i];
+            sel.add(opt, null);
+        }
+    }
+    
+    function nextUrl() {
+        var url = document.getElementById("urls");
+        var target = document.getElementById("currentDashboard");
+        
+        if (url.selectedIndex == (url.length - 1)) {
+            url.selectedIndex = 0;
+        } else {
+            url.selectedIndex++;
+        }
+        
+        target.src = url[url.selectedIndex].value;
+    }
+    
+    function startSlides() {
+        var frequency = document.getElementById("refresh").value * 1000;
+        window.clearInterval(timerId);
+        timerId = window.setInterval(nextUrl, frequency);
+    }
+    </script>
+</head>
+
+
+<body onLoad="loadUrls(); nextUrl(); startSlides();">
+    <form>
+        <select id="urls">
+        </select>
+        <input type="button" id="delete_dash" value="Delete" onClick="delUrl();">
+        <input type="button" id="append_dash" value="Append" onClick="addUrl();">
+        Change every <select id="refresh" onChange="startSlides();">
+            <option>5</option>
+            <option>10</option>
+            <option>15</option>
+            <option>30</option>
+            <option>60</option>
+            <option>120</option>
+            <option>300</option>
+        </select> secs
+        
+    </form>
+    <div id="root">
+        <iframe id="currentDashboard"></iframe>
+    </div>
+</body>
+</html>
